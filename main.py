@@ -11,23 +11,22 @@ import logging
 import time
 import datetime as DT
 import xml.etree.ElementTree as ET
-from sys import platform
 import requests
 import requests.utils
+from dotenv import load_dotenv
+from os.path import join, dirname
 
 def get_exist_file_name(dest_dir_param, file_mask):
-    """Функция проверки наличия файла."""
-    file_path = os.path.join(dest_dir_param, file_mask)
+    '''Функция проверки наличия файла.'''
+    file_path = join(dest_dir_param, file_mask)
     res0 = glob.glob(file_path)
     if bool(len(res0) > 0):
-        return os.path.join(dest_dir_param, res0[0])
+        return join(dest_dir_param, res0[0])
     return ""
 
 
 def convert_path(path, ucode, region, date1):
     """Конвертируем строку."""
-    if IS_UNIX:
-        path = path.replace('\\', '/')
     path = path.replace('%USERCODE%', ucode)
     path = path.replace('%REGION%', region)
     path = path.replace('%YEAR%', date1.strftime('%Y'))
@@ -36,13 +35,27 @@ def convert_path(path, ucode, region, date1):
     return path
 
 
+dotenv_path = join(dirname(__file__), '.env')
+load_dotenv(dotenv_path)
+
+# переменные для искусственной "заморозки" программы. Такая "заморозка" нужна,
+# чтобы сайт АТС не снижал искусственно скорость загрузки отчетов
+TIME_BETWEEN_TIMEOUT = int(os.environ.get("TIME_BETWEEN_TIMEOUT")) # Интервал времени между "заморозками" программы (в секундах)
+TIMEOUT_IN_SECONDS = int(os.environ.get("TIMEOUT_IN_SECONDS")) # Длительность "заморозки" программы
+
+# Определение начальных директорий для настроек и для загрузки отчетов
+HOME_DIR_FOR_SAVE = os.environ.get("HOME_DIR_FOR_SAVE")
+
 start_time = DT.datetime.now()
 
+# Добавляем логирование
 logger = logging.getLogger('py_ats')
 logger.setLevel(logging.INFO)
-# создаем handler файла
+
+#Если папки с логом нет, то создаем её
 if not os.path.exists('LOG'):
     os.makedirs('LOG')
+# создаем handler файла лога
 fh = logging.FileHandler("LOG/{}_py_ats.log".format(DT.date.today().strftime("%Y-%m-%d")))
 
 # задаем форматирование
@@ -54,28 +67,6 @@ logger.addHandler(fh)
 FIRST_URL = "http://www.atsenergo.ru/auth" # первоначальный URL (без шифрования)
 AUTH_URL = "https://www.atsenergo.ru/auth" # URL с шифрованием
 REPORT_URL = "https://www.atsenergo.ru/nreport"
-
-# переменные для искусственной "заморозки" программы. Такая "заморозка" нужна,
-# чтобы сайт АТС не снижал искусственно скорость загрузки отчетов
-TIME_BETWEEN_TIMEOUT = 5 # Интервал времени между "заморозками" программы (в секундах)
-TIMEOUT_IN_SECONDS = 3 # Длительность "заморозки" программы
-
-# Определение операционной системы
-IS_UNIX = True
-if platform in ('linux', 'linux2'):
-    IS_UNIX = True
-elif platform == 'win32':
-    IS_UNIX = False
-
-# Определение начальных директорий для настроек и для загрузки отчетов
-if IS_UNIX:
-    HOME_DIR_FOR_SAVE = r"/home/vasilii/ATS/"
-    PART_SETTINGS_DIR = r"/home/vasilii/ATS/"
-else:
-    HOME_DIR_FOR_SAVE = r"z:/BPE/Отдел покупок электроэнергии " + \
-        "- RS/База отчетов/"
-    PART_SETTINGS_DIR = r"z:/BPE/Отдел покупок электроэнергии - RS/" + \
-        "База отчетов/!Загрузка отчетов/"
 
 # Загрузка параметров загрузки
 script_settings = {}
@@ -131,9 +122,8 @@ if 'dt' not in script_settings.keys() and 'dt1' not in script_settings.keys() \
 
 # читаем настройки
 user_settings = []
-if os.path.exists(os.path.join(PART_SETTINGS_DIR, 'ParticipantSettings.xml')):
-    root = ET.parse(os.path.join(PART_SETTINGS_DIR,
-                                 'ParticipantSettings.xml')).getroot()
+if os.path.exists('ParticipantSettings.xml'):
+    root = ET.parse('ParticipantSettings.xml').getroot()
     for part_tag in root.findall('participant'):
         curr_setting = {'user_name': part_tag.get('userName'),
                         'user_code': part_tag.get('userCode'),
