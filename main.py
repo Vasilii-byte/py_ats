@@ -16,12 +16,16 @@ import requests.utils
 from dotenv import load_dotenv
 from os.path import join, dirname, exists, splitext, basename
 
-def get_exist_file_name(dest_dir_param, file_mask):
-    '''Функция проверки наличия файла.'''
-    file_path = join(dest_dir_param, file_mask)
+
+def get_exist_file_name(file_dir, file_mask):
+    '''Функция проверки наличия файла по маске.'''
+    file_path = join(file_dir, file_mask)
+    # Получаем список файлов, удовлетворяющих маске
     res0 = glob.glob(file_path)
+    # Если список файлов не пустой, 
+    # то возвращаем полный путь к первому найденному файлу
     if bool(len(res0) > 0):
-        return join(dest_dir_param, res0[0])
+        return join(file_dir, res0[0])
     return ""
 
 
@@ -35,34 +39,50 @@ def convert_path(path, ucode, region, date1):
     return path
 
 
-dotenv_path = join(dirname(__file__), '.env')
-load_dotenv(dotenv_path)
+def load_env(TIME_BETWEEN_TIMEOUT, TIMEOUT_IN_SECONDS, HOME_DIR_FOR_SAVE):
+    '''Процедура загрузки переменных окружения.'''
+    dotenv_path = join(dirname(__file__), '.env')
+    load_dotenv(dotenv_path)
 
-# переменные для искусственной "заморозки" программы. Такая "заморозка" нужна,
-# чтобы сайт АТС не снижал искусственно скорость загрузки отчетов
-TIME_BETWEEN_TIMEOUT = int(os.environ.get("TIME_BETWEEN_TIMEOUT")) # Интервал времени между "заморозками" программы (в секундах)
-TIMEOUT_IN_SECONDS = int(os.environ.get("TIMEOUT_IN_SECONDS")) # Длительность "заморозки" программы
+    # переменные для искусственной "заморозки" программы. Такая "заморозка" нужна,
+    # чтобы сайт АТС не снижал искусственно скорость загрузки отчетов
+    global TIME_BETWEEN_TIMEOUT
+    TIME_BETWEEN_TIMEOUT = int(os.environ.get("TIME_BETWEEN_TIMEOUT")) # Интервал времени между "заморозками" программы (в секундах)
+   
+    global TIMEOUT_IN_SECONDS
+    TIMEOUT_IN_SECONDS = int(os.environ.get("TIMEOUT_IN_SECONDS")) # Длительность "заморозки" программы
 
-# Определение начальных директорий для настроек и для загрузки отчетов
-HOME_DIR_FOR_SAVE = os.environ.get("HOME_DIR_FOR_SAVE")
+    # Определение начальных директорий для настроек и для загрузки отчетов
+    global HOME_DIR_FOR_SAVE
+    HOME_DIR_FOR_SAVE = os.environ.get("HOME_DIR_FOR_SAVE")
+
+
+def get_logger():
+    '''Инициализация логгера.'''
+
+    # Добавляем логирование
+    _logger = logging.getLogger('py_ats')
+    _logger.setLevel(logging.INFO)
+
+    #Если папки с логом нет, то создаем её
+    if not exists('LOG'):
+        os.makedirs('LOG')
+    # создаем handler файла лога
+    _fh = logging.FileHandler("LOG/{}_py_ats.log".format(DT.date.today().strftime("%Y-%m-%d")))
+
+    # задаем форматирование
+    _formatter = logging.Formatter('%(asctime)s - %(levelname)s: %(message)s')
+    _fh.setFormatter(_formatter)
+    # добавляем handler в логгер
+    _logger.addHandler(_fh)
+    return _logger
 
 start_time = DT.datetime.now()
-
-# Добавляем логирование
-logger = logging.getLogger('py_ats')
-logger.setLevel(logging.INFO)
-
-#Если папки с логом нет, то создаем её
-if not exists('LOG'):
-    os.makedirs('LOG')
-# создаем handler файла лога
-fh = logging.FileHandler("LOG/{}_py_ats.log".format(DT.date.today().strftime("%Y-%m-%d")))
-
-# задаем форматирование
-formatter = logging.Formatter('%(asctime)s - %(levelname)s: %(message)s')
-fh.setFormatter(formatter)
-# добавляем handler в логгер
-logger.addHandler(fh)
+TIME_BETWEEN_TIMEOUT = 0
+TIMEOUT_IN_SECONDS = 0
+HOME_DIR_FOR_SAVE = ''
+load_env()
+logger = get_logger()
 
 FIRST_URL = "http://www.atsenergo.ru/auth" # первоначальный URL (без шифрования)
 AUTH_URL = "https://www.atsenergo.ru/auth" # URL с шифрованием
