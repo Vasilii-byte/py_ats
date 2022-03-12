@@ -14,7 +14,7 @@ import xml.etree.ElementTree as ET
 import requests
 import requests.utils
 from dotenv import load_dotenv
-from os.path import join, dirname
+from os.path import join, dirname, exists, splitext, basename
 
 def get_exist_file_name(dest_dir_param, file_mask):
     '''Функция проверки наличия файла.'''
@@ -53,7 +53,7 @@ logger = logging.getLogger('py_ats')
 logger.setLevel(logging.INFO)
 
 #Если папки с логом нет, то создаем её
-if not os.path.exists('LOG'):
+if not exists('LOG'):
     os.makedirs('LOG')
 # создаем handler файла лога
 fh = logging.FileHandler("LOG/{}_py_ats.log".format(DT.date.today().strftime("%Y-%m-%d")))
@@ -68,7 +68,7 @@ FIRST_URL = "http://www.atsenergo.ru/auth" # первоначальный URL (�
 AUTH_URL = "https://www.atsenergo.ru/auth" # URL с шифрованием
 REPORT_URL = "https://www.atsenergo.ru/nreport"
 
-# Загрузка параметров загрузки
+# Загрузка параметров командной строки
 script_settings = {}
 for arg in sys.argv:
     if arg.find('=') != -1:
@@ -122,7 +122,7 @@ if 'dt' not in script_settings.keys() and 'dt1' not in script_settings.keys() \
 
 # читаем настройки
 user_settings = []
-if os.path.exists('ParticipantSettings.xml'):
+if exists('ParticipantSettings.xml'):
     root = ET.parse('ParticipantSettings.xml').getroot()
     for part_tag in root.findall('participant'):
         curr_setting = {'user_name': part_tag.get('userName'),
@@ -149,7 +149,7 @@ for u_setting in user_settings:
     else:
         REPORT_SETTINGS_FILE = "ReportSettingsPart.xml"
 
-    if os.path.exists(REPORT_SETTINGS_FILE):
+    if exists(REPORT_SETTINGS_FILE):
         root = ET.parse(REPORT_SETTINGS_FILE).getroot()
         for rep_tag in root.findall('report'):
             curr_setting = {'name': rep_tag.get('name'),
@@ -241,7 +241,7 @@ for u_setting in user_settings:
                     print("Ожидание {} секунды...".format(TIMEOUT_IN_SECONDS))
                     time.sleep(TIMEOUT_IN_SECONDS)
 
-                DEST_DIR = os.path.join(HOME_DIR_FOR_SAVE,
+                DEST_DIR = join(HOME_DIR_FOR_SAVE,
                                         str(report_setting['path']))
                 DEST_DIR = convert_path(DEST_DIR, str(u_setting['user_code']),
                                         zone, dt)
@@ -257,7 +257,7 @@ for u_setting in user_settings:
                 print(dt)
 
                 # Если целевой папки нет, но создаем её
-                if not os.path.exists(DEST_DIR):
+                if not exists(DEST_DIR):
                     os.makedirs(DEST_DIR)
 
                 PERS_URL = "https://www.atsenergo.ru/nreports?access={}" \
@@ -279,7 +279,7 @@ for u_setting in user_settings:
 
                 if results is not None:
                     for res in results:
-                        base = os.path.splitext(res[1])[0]
+                        base = splitext(res[1])[0]
                         exist_file_name = \
                             get_exist_file_name(DEST_DIR, base + '.*')
                         if not exist_file_name and \
@@ -299,7 +299,7 @@ for u_setting in user_settings:
                                 if response.status_code != 200:
                                     logger.error("Bad response with loading file %s. \
                                                   Response code %s", \
-                                                  os.path.basename(exist_file_name), \
+                                                  basename(exist_file_name), \
                                                   response.status_code)
                             except requests.exceptions.RequestException as exception:
                                 logger.exception(exception)
@@ -309,7 +309,7 @@ for u_setting in user_settings:
                             print("Файл: {}".format(FILE_NAME))
                             logger.info("Loading file: %s", FILE_NAME)
 
-                            FILE_NAME = os.path.join(DEST_DIR, FILE_NAME)
+                            FILE_NAME = join(DEST_DIR, FILE_NAME)
                             try:
                                 with open(FILE_NAME, 'wb') as report_file:
                                     report_file.write(response.content)
@@ -323,7 +323,7 @@ for u_setting in user_settings:
                                     os.remove(FILE_NAME)
                                 except zipfile.BadZipFile:
                                     logger.error("Bad zip file. Error with unpacking %s", \
-                                                 os.path.basename(FILE_NAME))
+                                                 basename(FILE_NAME))
                                     print("Invalid file {}".format(FILE_NAME))
                                 except IOError:
                                     logger.error("IOError with inpacking file %s", FILE_NAME)
