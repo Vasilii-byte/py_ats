@@ -11,10 +11,10 @@ import logging
 import time
 import datetime as DT
 import xml.etree.ElementTree as ET
+from os.path import join, dirname, exists, splitext, basename
 import requests
 import requests.utils
 from dotenv import load_dotenv
-from os.path import join, dirname, exists, splitext, basename
 
 
 def get_exist_file_name(file_dir, file_mask):
@@ -29,7 +29,7 @@ def get_exist_file_name(file_dir, file_mask):
     return ""
 
 
-def convert_path(path, ucode, region, date1):
+def convert_path(path: str, ucode: str, region: str, date1) -> str:
     """Конвертируем строку."""
     path = path.replace('%USERCODE%', ucode)
     path = path.replace('%REGION%', region)
@@ -39,28 +39,9 @@ def convert_path(path, ucode, region, date1):
     return path
 
 
-def load_env(TIME_BETWEEN_TIMEOUT, TIMEOUT_IN_SECONDS, HOME_DIR_FOR_SAVE):
-    '''Процедура загрузки переменных окружения.'''
-    dotenv_path = join(dirname(__file__), '.env')
-    load_dotenv(dotenv_path)
-
-    # переменные для искусственной "заморозки" программы. Такая "заморозка" нужна,
-    # чтобы сайт АТС не снижал искусственно скорость загрузки отчетов
-    global TIME_BETWEEN_TIMEOUT
-    TIME_BETWEEN_TIMEOUT = int(os.environ.get("TIME_BETWEEN_TIMEOUT")) # Интервал времени между "заморозками" программы (в секундах)
-   
-    global TIMEOUT_IN_SECONDS
-    TIMEOUT_IN_SECONDS = int(os.environ.get("TIMEOUT_IN_SECONDS")) # Длительность "заморозки" программы
-
-    # Определение начальных директорий для настроек и для загрузки отчетов
-    global HOME_DIR_FOR_SAVE
-    HOME_DIR_FOR_SAVE = os.environ.get("HOME_DIR_FOR_SAVE")
-
-
-def get_logger():
+def get_logger() -> logging.Logger:
     '''Инициализация логгера.'''
 
-    # Добавляем логирование
     _logger = logging.getLogger('py_ats')
     _logger.setLevel(logging.INFO)
 
@@ -78,10 +59,21 @@ def get_logger():
     return _logger
 
 start_time = DT.datetime.now()
-TIME_BETWEEN_TIMEOUT = 0
-TIMEOUT_IN_SECONDS = 0
-HOME_DIR_FOR_SAVE = ''
-load_env()
+
+# Загрузка переменных окружения
+dotenv_path = join(dirname(__file__), '.env')
+load_dotenv(dotenv_path)
+
+# переменные для искусственной "заморозки" программы. Такая "заморозка" нужна,
+# чтобы сайт АТС не снижал искусственно скорость загрузки отчетов
+TIME_BETWEEN_TIMEOUT = int(os.environ.get("TIME_BETWEEN_TIMEOUT")) # Интервал времени между "заморозками" программы (в секундах)
+
+TIMEOUT_IN_SECONDS = int(os.environ.get("TIMEOUT_IN_SECONDS")) # Длительность "заморозки" программы
+
+# Определение начальных директорий для настроек и для загрузки отчетов
+HOME_DIR_FOR_SAVE = os.environ.get("HOME_DIR_FOR_SAVE")
+
+# Создаем логгер
 logger = get_logger()
 
 FIRST_URL = "http://www.atsenergo.ru/auth" # первоначальный URL (без шифрования)
@@ -102,7 +94,7 @@ if 'load_type' not in script_settings.keys():
 
 # Определение интервала дат для загрузки
 dt_today = DT.date.today()
-if 'dt' in script_settings.keys():
+if 'dt' in script_settings.keys(): # если задана дата dt в параметрах командной строки
     dt1 = DT.datetime.strptime(script_settings['dt'], '%Y%m%d').date()
     if dt1 > dt_today + DT.timedelta(days=1):
         print("Параметр dt не может быть больше завтрашнего дня!")
@@ -140,7 +132,7 @@ if 'dt' not in script_settings.keys() and 'dt1' not in script_settings.keys() \
     dt1 = dt2 + DT.timedelta(days=-65)
 
 
-# читаем настройки
+# читаем настройки участников ОРЭМ
 user_settings = []
 if exists('ParticipantSettings.xml'):
     root = ET.parse('ParticipantSettings.xml').getroot()
@@ -162,7 +154,7 @@ for u_setting in user_settings:
                 find(str(u_setting['user_code']).upper()) == -1:
             continue
 
-    # читаем настройки
+    # читаем настройки отчетов (персональных и публичных)
     report_settings = []
     if script_settings['load_type'] == 'public':
         REPORT_SETTINGS_FILE = "ReportSettingsPubl.xml"
@@ -192,7 +184,6 @@ for u_setting in user_settings:
     s = requests.Session()
 
     # Заходим на сайт АТС, чтобы получить куки
-
     try:
         response = s.get(FIRST_URL, allow_redirects=True)
     except requests.exceptions.RequestException as exception:
@@ -262,7 +253,7 @@ for u_setting in user_settings:
                     time.sleep(TIMEOUT_IN_SECONDS)
 
                 DEST_DIR = join(HOME_DIR_FOR_SAVE,
-                                        str(report_setting['path']))
+                                str(report_setting['path']))
                 DEST_DIR = convert_path(DEST_DIR, str(u_setting['user_code']),
                                         zone, dt)
 
