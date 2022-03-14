@@ -293,11 +293,11 @@ for u_setting in user_settings:
                         base = splitext(res[1])[0]
                         exist_file_name = \
                             get_exist_file_name(DEST_DIR, base + '.*')
-                        if not exist_file_name and \
+                        if exist_file_name != "" and \
                            script_settings['overwrite'].lower() == 'false':
                             pass
                         else:
-                            if not exist_file_name and \
+                            if exist_file_name != "" and \
                               script_settings['overwrite'].lower() == 'true':
                                 os.remove(exist_file_name)
 
