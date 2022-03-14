@@ -17,12 +17,12 @@ import requests.utils
 from dotenv import load_dotenv
 
 
-def get_exist_file_name(file_dir, file_mask):
+def get_exist_file_name(file_dir: str, file_mask: str) -> str:
     '''Функция проверки наличия файла по маске.'''
     file_path = join(file_dir, file_mask)
     # Получаем список файлов, удовлетворяющих маске
     res0 = glob.glob(file_path)
-    # Если список файлов не пустой, 
+    # Если список файлов не пустой,
     # то возвращаем полный путь к первому найденному файлу
     if bool(len(res0) > 0):
         return join(file_dir, res0[0])

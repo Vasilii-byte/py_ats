@@ -3,3 +3,4 @@ LOG
 .env
 *.bat
 *.json
+.vscode
