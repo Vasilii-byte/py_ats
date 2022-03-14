@@ -1,3 +1,5 @@
 ParticipantSettings.xml
 LOG
 .env
+*.bat
+*.json
