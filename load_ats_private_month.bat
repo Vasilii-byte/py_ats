@@ -1,1 +1,0 @@
-python main.py dt1=-60 overwrite=false reportcode=matrix_peny_month,peny_uved_month,energy_comissioner_cfr,CFR_PART_RSV_BR_NCZ_KP_REP,CESSM,cesspeny,CFR_PART_DPMV_CHANGE_NOTICE,CFR_PART_DOP_REP_FACT_CALC_EE_PWR
