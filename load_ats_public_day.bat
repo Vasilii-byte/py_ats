@@ -1,0 +1,1 @@
+python main.py dt1=-3 overwrite=false load_type=public partcode=mosenerg reportcode=trade_region_spub,carana_sell_units,curve_demand_offer,E_overflow_npz,losses_gtps,losses_regions,ppp_consumer_type,trade_zone,overflow_zsp,overflow_sechen_all_pub,big_nodes_prices_pub,trade_zsp,E_dispatch_units_npz
