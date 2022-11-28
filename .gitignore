@@ -153,3 +153,8 @@ yatube/media/
 # папки с настройками отчетов
 *.xml
 .xml
+
+*.bat
+copy_reports.py
+*.json
+*.bak*

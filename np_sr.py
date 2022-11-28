@@ -2,10 +2,10 @@
 # coding: utf-8
 
 """Скрипт по загрузке данных с сайта НП СР."""
-import re
 import os
-import requests
+import re
 
+import requests
 
 SITE_URL = "http://www.np-sr.ru"
 VIE_URL = SITE_URL + "/ru/market/vie/index.htm"
@@ -56,5 +56,5 @@ if results is not None:
                 try:
                     with open(full_filename, "wb") as report_file:
                         report_file.write(response.content)
-                except IOError as exception:
+                except IOError:
                     print("Error with saving file %s", filename)
