@@ -18,9 +18,7 @@ from typing import List
 import keyring
 import urllib3
 from dotenv import load_dotenv
-from lxml import etree
 
-from atsCryptoLoader import AtsCryptoLoader
 from atsPwdLoader import AtsPwdLoader
 from sendMail import send_mail
 
@@ -227,6 +225,7 @@ def load_from_main_source(script_settings):
 
     REPORT_SETTINGS_PUB_FILE = os.environ.get("REPORT_SETTINGS_PUB_FILE")   # noqa
     REPORT_SETTINGS_PRIV_FILE = os.environ.get("REPORT_SETTINGS_PRIV_FILE") # noqa
+    PARTICIPANT_SETTINGS_FILE = os.environ.get("PARTICIPANT_SETTINGS_FILE") # noqa
 
     MAX_TIMESHIFT = int(os.environ.get("MAX_TIMESHIFT"))                    # noqa
 
@@ -432,64 +431,6 @@ def load_from_main_source(script_settings):
             send_mail(email, reports, logger)
 
 
-def load_from_crypto_source(script_settings):
-    # start_time = datetime.datetime.now()
-
-    # Загрузка переменных окружения
-    dotenv_path = join(dirname(__file__), '.env')
-    load_dotenv(dotenv_path)
-
-    # переменные для искусственной "заморозки" программы. Такая "заморозка"
-    # нужна, чтобы сайт АТС не снижал искусственно скорость загрузки отчетов
-    # Интервал времени между "заморозками" программы (в секундах)
-    TIME_BETWEEN_TIMEOUT = int(os.environ.get("TIME_BETWEEN_TIMEOUT"))      # noqa
-
-    VERIFY_STATUS = int(os.environ.get("VERIFY_STATUS")) == 1     # noqa
-
-    # Длительность "заморозки" программы
-    TIMEOUT_IN_SEC = int(os.environ.get("TIMEOUT_IN_SECONDS"))              # noqa
-
-    # Определение начальных директорий для настроек и для загрузки отчетов
-    HOME_DIR_FOR_SAVE = os.environ.get("HOME_DIR_FOR_SAVE")                 # noqa
-
-    REPORT_SETTINGS_PUB_FILE = os.environ.get("REPORT_SETTINGS_PUB_FILE")   # noqa
-    REPORT_SETTINGS_PRIV_FILE = os.environ.get("REPORT_SETTINGS_PRIV_FILE") # noqa
-
-    MAX_TIMESHIFT = int(os.environ.get("MAX_TIMESHIFT"))                    # noqa
-
-    # Создаем логгер
-    logger = get_logger()
-
-    if 'overwrite' not in script_settings.keys():
-        script_settings['overwrite'] = 'false'
-
-    dt1, dt2 = get_dates(script_settings, MAX_TIMESHIFT)
-
-    # получаем список настроек участников ОРЭМ
-    logger.info("------------Start download------------")
-    # time1 = time.time()
-    # Цикл по участникам
-
-    loader = AtsCryptoLoader(logger=logger, verify_status=VERIFY_STATUS)
-    loader.get_cert_from_json()
-    loader.part_code = 'MOSENERG'
-    res = loader.login()
-    loader.read_reports_to_dict(res)
-    for rep_name, url in loader.rep_dict.items():
-        print(rep_name)
-        print('https://' + loader.ATS_URL + url)
-        html = loader.get_page('https://' + loader.ATS_URL + url)
-
-        table = etree.HTML(html).find("body/table")
-        rows = iter(table)
-        headers = [col.text for col in next(rows)]
-        for row in rows:
-            values = [col.text for col in row]
-            print(dict(zip(headers, values)))
-        if rep_name == 'Документы по РД':
-            return
-
-
 def main():
     urllib3.disable_warnings()
 
@@ -514,8 +455,6 @@ def main():
 
     if script_settings['source_type'] == 'ats_reports':
         load_from_main_source(script_settings)
-    if script_settings['source_type'] == 'crypto':
-        load_from_crypto_source(script_settings)
 
 
 if __name__ == '__main__':
