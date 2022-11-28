@@ -157,6 +157,8 @@ def get_participant_settings(reportcode_args: str, load_type: str) -> List:
     else:
         participants_to_load = reportcode_args.upper().split(',')
 
+    PARTICIPANT_SETTINGS_FILE = os.environ.get("PARTICIPANT_SETTINGS_FILE") # noqa
+
     part_settings = []
     if load_type == 'public':
         curr_setting = {'user_name': '',
@@ -165,8 +167,8 @@ def get_participant_settings(reportcode_args: str, load_type: str) -> List:
                         'zone': 'eur;sib'}
         part_settings.append(curr_setting)
     else:
-        if exists('ParticipantSettings.xml'):
-            root = ElementTree.parse('ParticipantSettings.xml').getroot()
+        if exists(PARTICIPANT_SETTINGS_FILE):
+            root = ElementTree.parse(PARTICIPANT_SETTINGS_FILE).getroot()
             for part_tag in root.findall('participant'):
                 part_code = part_tag.get('userCode')
                 user_emails = part_tag.get('userEmails')
@@ -225,7 +227,6 @@ def load_from_main_source(script_settings):
 
     REPORT_SETTINGS_PUB_FILE = os.environ.get("REPORT_SETTINGS_PUB_FILE")   # noqa
     REPORT_SETTINGS_PRIV_FILE = os.environ.get("REPORT_SETTINGS_PRIV_FILE") # noqa
-    PARTICIPANT_SETTINGS_FILE = os.environ.get("PARTICIPANT_SETTINGS_FILE") # noqa
 
     MAX_TIMESHIFT = int(os.environ.get("MAX_TIMESHIFT"))                    # noqa
 

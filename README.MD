@@ -2,8 +2,10 @@
 
 Программа позволяет скачивать и распределять по заданным папкам отчеты с сайта АО "АТС" (<https://www.atsenergo.ru/>). Отчеты могут скачиваться с публичных страниц сайта, так и из персонального раздела участника оптового рынка электроэнергии и мощности.
 
-Программа работает в режиме командной строки.
-Настройки загрузик отчетов необходимо указать в файлах ReportSettingsPart.xml (для персональных отчетов участников) и ReportSettingsPubl.xml (для публичных отчетов)
+Программа работает в режиме командной строки, что позволяет гибко настроить расписание загрузки.
+Настройки по загрузке отчетов необходимо указать в файлах ReportSettingsPart.xml (для персональных отчетов участников) и ReportSettingsPubl.xml (для публичных отчетов).
+
+В случае загрузки наиболее важных отчетов программа высылает по электронной почте уведомление о том, что такой отчет загружен.
 
 ## Синтаксис:
 ```BASH
@@ -50,8 +52,36 @@ python main.py параметр=значение
 + `reportcode=[Код отчета]` (например `reportcode=carana_sell_units`)
 Код отчета для загрузки. Можно задать несколько через запятую.
 Если не задан, то грузятся все отчеты, которые имеются в настройках.
+
+## Установка
+- Инструкции по установке python и git см. на официальных сайтах (если не установлено).
+- Клонирование репозитория (командная строка): `git clone https://github.com/Vasilii-byte/py_ats.git`
+- Переходим в папку с наименованием py_ats, устанавливаем виртуальное окружение: `python -m venv venv`
+- Установка зависимостей: `pip install -r requirements.txt`
+- Создаем в папке файл с наименованиеми `.env` и задаем настройки:
+```
+HOME_DIR_FOR_SAVE=C:\Папка для отчетов\
+TIME_BETWEEN_TIMEOUT=5
+TIMEOUT_IN_SECONDS=3
+REPORT_SETTINGS_PUB_FILE = ReportSettingsPubl.xml
+REPORT_SETTINGS_PRIV_FILE = ReportSettingsPart.xml
+PARTICIPANT_SETTINGS_FILE = ParticipantSettings.xml
+MAX_TIMESHIFT = -65
+DOMAIN=org.ru
+SMTP_SERVER=smtp.org.ru
+VERIFY_STATUS=0
+```
+- Настраиваем файлы отчетов, указанные в `.env` файле как REPORT_SETTINGS_PRIV_FILE и REPORT_SETTINGS_PUB_FILE. Начальные настройки уже заданы в файлах.
+- Настраиваем файл PARTICIPANT_SETTINGS_FILE
+- Далее нужно задать пароль пользователя, под которым программа будет направлять сообщения на электронную почту. Для этого нужно запусть программу с ключом user-pass:  `python main.py --user-pass`. Программа предложить ввести пароль
+- Если планируется скачиваение персональных отчетов участника рынка, то нужно запустить программу с ключом participant-pass: `python main.py --participant-pass=XXXENERG`
+
+
 ## Примеры
-- `python main.py dt1=-5 source_type=ats_reports overwrite=false reportcode=cfrliab,mtrx,PENYLIAB,cfrliabdpg,peny_uved,CFR_PART_BUH_INFO,CFR_PART_LIAB_DEL_NOTICE,cessinfo,komreestr,CFR_PART_DPMV_NOTICE,CFR_RD_CLOSE_NOTIF,necessity`
+-  
+```CMD
+python main.py dt1=-5 source_type=ats_reports overwrite=false reportcode=cfrliab,mtrx,PENYLIAB,cfrliabdpg,peny_uved,CFR_PART_BUH_INFO,CFR_PART_LIAB_DEL_NOTICE,cessinfo,komreestr,CFR_PART_DPMV_NOTICE,CFR_RD_CLOSE_NOTIF,necessity
+```
    
    В этом примере загружаются персональные (не указан ключ `load_type`) отчеты по всем участникам, указанным в файле с настройками участников (т.к. конкретный участник не указан в ключе `partcode`). Отчеты загружаются за 5 прошедших дней с даты загрузки (`dt1=-5`)
    
